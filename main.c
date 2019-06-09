@@ -4,9 +4,21 @@
 
 #define FILENAME "graph.txt"
 
+int **readFromFile(char *filename, int *size);
+
+int **graphCopy(int **graph, int size);
+
+int *branchAndBound(int **graph, int size, int *way);
+
+int main() {
+    int graphSize;
+    int **graph = readFromFile(FILENAME, &graphSize);
+    return 0;
+}
+
 int **readFromFile(char *filename, int *size) {
     FILE *file = fopen(filename, "r");
-
+    *size = 0;
     int cost;
     while (1) {
         fwscanf(file, L"%d", &cost);
@@ -28,14 +40,16 @@ int **readFromFile(char *filename, int *size) {
     return graph;
 }
 
-int main() {
-    int graphSize = 0;
-    int **graph = readFromFile(FILENAME, &graphSize);
-    for (int i = 0; i < graphSize; i++) {
-        for (int j = 0; j < graphSize; j++) {
-            wprintf(L"%d", graph[i][j]);
+int **graphCopy(int **graph, int size) {
+    int **copy = malloc(sizeof(int) * (size));
+    for (int i = 0; i < size; i++) {
+        copy[i] = malloc(sizeof(int) * (size));
+        for (int j = 0; j < size; j++) {
+            copy[i][j] = graph[i][j];
         }
-        wprintf(L"\n");
     }
-    return 0;
+    return copy;
+}
+
+int *branchAndBound(int **graph, int size, int *way) {
 }
