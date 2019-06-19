@@ -21,6 +21,9 @@ int stackTop(Node *head);
 
 void stackFree(Node *head);
 
+int isInStack(Node *stack, int data);
+
+
 Node *stackPush(Node *head, int data) {
     if (head == NULL) {
         head = malloc(sizeof(Node));
@@ -35,6 +38,7 @@ Node *stackPush(Node *head, int data) {
         current->next->data = data;
         current->next->next = NULL;
     }
+    return head;
 }
 
 int stackPop(Node *head) {
@@ -64,6 +68,16 @@ void stackFree(Node *head) {
         free(current);
         current = next;
     }
+}
+
+int isInStack(Node *stack, int data) {
+    while (stack != NULL) {
+        if (stack->data == data) {
+            return 1;
+        }
+        stack = stack->next;
+    }
+    return 0;
 }
 
 #endif //HALF_YEAR_WORK_STACK_H
