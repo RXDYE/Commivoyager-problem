@@ -28,18 +28,26 @@ int nearestNeighbourMethod(int vertex, int **graph, int size, int *way);
 
 int isOriented(int **graph, int size);
 
+void graphDelete(int **graph, int size);
+
 int main() {
     setlocale(LC_ALL, "");
     int graphSize;
-    int **graph = readFromFile(FILENAME, &graphSize);
-    int *way = malloc(sizeof(int) * (graphSize + 1));
     int length;
     clock_t begin, end;
+    int **graph = readFromFile(FILENAME, &graphSize);
+    int *way = malloc(sizeof(int) * (graphSize + 1));
 
+    if (graph == NULL) {
+        wprintf(L"Error while reading a file. File was not found or there is incorrect data");
+        return 0;
+    }
     if (isOriented(graph, graphSize)) {
         wprintf(L"This graph is oriented");
         return 0;
     }
+
+
     begin = clock();
     length = bruteForce(1, graph, graphSize, way);
     end = clock();
@@ -52,6 +60,7 @@ int main() {
     wprintf(L"\n Its length = %d\n", length);
     wprintf(L" Elapsed %f\n", (double) (end - begin) / CLOCKS_PER_SEC);
 
+
     begin = clock();
     length = branchAndBound(1, graph, graphSize, way);
     end = clock();
@@ -59,6 +68,7 @@ int main() {
     wayPrint(way, graphSize + 1);
     wprintf(L"\n Its length = %d\n", length);
     wprintf(L" Elapsed %f\n", (double) (end - begin) / CLOCKS_PER_SEC);
+
 
     begin = clock();
     length = nearestNeighbourMethod(1, graph, graphSize, way);
@@ -68,20 +78,18 @@ int main() {
     wprintf(L"\n Its length = %d\n", length);
     wprintf(L" Elapsed %f", (double) (end - begin) / CLOCKS_PER_SEC);
 
+
     free(way);
-    for (int i = 0; i < graphSize; i++) {
-        free(graph[i]);
-    }
-    free(graph);
+    graphDelete(graph, graphSize);
     return 0;
 }
 
 int **readFromFile(char *filename, int *size) {
     FILE *file = fopen(filename, "r");
     *size = 0;
-    int cost;
+    int temp;
     while (1) {
-        fwscanf(file, L"%d", &cost);
+        fwscanf(file, L"%d", &temp);
         (*size)++;
         if (fgetwc(file) == L'\n') {
             break;
@@ -93,30 +101,26 @@ int **readFromFile(char *filename, int *size) {
     for (int i = 0; i < *size; i++) {
         graph[i] = malloc(sizeof(int) * (*size));
         for (int j = 0; j < *size; j++) {
-            fwscanf(file, L"%d", &cost);
-            graph[i][j] = cost;
+            if (feof(file)) {
+                while (i >= 0) {
+                    free(graph[i]);
+                    i--;
+                }
+                free(graph);
+                return NULL;
+            }
+            fwscanf(file, L"%d", &graph[i][j]);
         }
     }
     return graph;
 }
 
-int **graphCopy(int **graph, int size) {
-    int **copy = malloc(sizeof(int) * (size));
-    for (int i = 0; i < size; i++) {
-        copy[i] = malloc(sizeof(int) * (size));
-        for (int j = 0; j < size; j++) {
-            copy[i][j] = graph[i][j];
-        }
-    }
-    return copy;
-}
-
 int bruteForce(int vertex, int **graph, int size, int *way) {
+    int current = vertex;
     IntStack *actualWay = calloc(1, sizeof(IntStack));
     intStackPush(actualWay, vertex);
     StackOfStack *memory = calloc(1, sizeof(StackOfStack));
     stackOfStackPush(memory, calloc(1, sizeof(IntStack)));
-    int current = vertex;
     int bestLength = INT_MAX;
     int wayLength = 0;
     int depth = 1;
@@ -149,11 +153,11 @@ int bruteForce(int vertex, int **graph, int size, int *way) {
 }
 
 int branchAndBound(int vertex, int **graph, int size, int *way) {
+    int current = vertex;
     IntStack *actualWay = calloc(1, sizeof(IntStack));
     intStackPush(actualWay, vertex);
     StackOfStack *memory = calloc(1, sizeof(StackOfStack));
     stackOfStackPush(memory, calloc(1, sizeof(IntStack)));
-    int current = vertex;
     int bestLength = INT_MAX;
     int wayLength = 0;
     int depth = 1;
@@ -222,11 +226,11 @@ int getNearestUnvisitedNeighbour(int vertex, int **graph, int size, IntStack *cu
 }
 
 int nearestNeighbourMethod(int vertex, int **graph, int size, int *way) {
+    int current = vertex;
     IntStack *actualWay = calloc(1, sizeof(IntStack));
     intStackPush(actualWay, vertex);
     StackOfStack *memory = calloc(1, sizeof(StackOfStack));
     stackOfStackPush(memory, calloc(1, sizeof(IntStack)));
-    int current = vertex;
     int wayLength = 0;
     int depth = 1;
     while (actualWay->head != NULL) {
@@ -265,4 +269,11 @@ int isOriented(int **graph, int size) {
         }
     }
     return 0;
+}
+
+void graphDelete(int **graph, int size) {
+    for (int i = 0; i < size; i++) {
+        free(graph[i]);
+    }
+    free(graph);
 }
