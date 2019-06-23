@@ -113,7 +113,7 @@ int bruteForce(int vertex, int **graph, int size, int *way) {
             stackOfStackPush(memory, calloc(1, sizeof(IntStack)));
             depth++;
         } else {
-            if (depth == size && graph[intStackTop(actualWay)][vertex] != 0 && wayLength < bestLength) {
+            if (depth == size && graph[intStackTop(actualWay)][vertex] != 0 && wayLength+graph[intStackTop(actualWay)][vertex] < bestLength) {
                 wayCopy(actualWay, way);
                 bestLength = wayLength + graph[intStackTop(actualWay)][vertex];
             }
@@ -144,7 +144,7 @@ int branchAndBound(int vertex, int **graph, int size, int *way) {
             stackOfStackPush(memory, calloc(1, sizeof(IntStack)));
             depth++;
         } else {
-            if (depth == size && graph[intStackTop(actualWay)][vertex] != 0 && wayLength < bestLength) {
+            if (depth == size && graph[intStackTop(actualWay)][vertex] != 0 && wayLength+graph[intStackTop(actualWay)][vertex] < bestLength) {
                 wayCopy(actualWay, way);
                 bestLength = wayLength + graph[intStackTop(actualWay)][vertex];
             }
