@@ -26,7 +26,7 @@ void intStackPush(IntStack *intStack, int data) {
 }
 
 int intStackTop(IntStack *intStack) {
-    if (intStack->head == NULL) {
+    if (intStack->tail == NULL) {
         return 0;
     } else return intStack->tail->data;
 }
@@ -39,7 +39,7 @@ int intStackPop(IntStack *intStack) {
     if (intStack->head->next == NULL) {
         ret = intStack->head->data;
         free(intStack->head);
-        intStack->head = intStack->tail == NULL;
+        intStack->head = intStack->tail = NULL;
     } else {
         IntStackNode *current = intStack->head;
         while (current->next != intStack->tail) {

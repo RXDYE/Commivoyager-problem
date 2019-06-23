@@ -14,8 +14,7 @@ typedef struct stackOfStack {
 
 void stackOfStackPush(StackOfStack *stackOfStack, IntStack *data) {
     if (stackOfStack->head == NULL) {
-        stackOfStack->head = (StackOfStackNode *) malloc(sizeof(StackOfStackNode));
-        stackOfStack->head = stackOfStack->tail = malloc(sizeof(StackOfStackNode));
+        stackOfStack->head = stackOfStack->tail = (StackOfStackNode *) malloc(sizeof(StackOfStackNode));
         stackOfStack->head->data = data;
     } else {
         stackOfStack->tail->next = malloc(sizeof(IntStackNode));
@@ -48,6 +47,18 @@ void stackOfStackPop(StackOfStack *stackOfStack) {
         stackOfStack->tail = current;
         stackOfStack->tail->next = NULL;
     }
+}
+
+void stackOfStackFree(StackOfStack *stackOfStack) {
+    StackOfStackNode *current = stackOfStack->head;
+    StackOfStackNode *temp;
+    while (current != NULL) {
+        temp = current->next;
+        intStackFree(current->data);
+        free(current);
+        current = temp;
+    }
+    free(stackOfStack);
 }
 
 #endif //HALF_YEAR_WORK_STACKOFSTACK_H

@@ -32,7 +32,6 @@ int main() {
     int **graph = readFromFile(FILENAME, &graphSize);
     int *way = malloc(sizeof(int) * (graphSize + 1));
     int length;
-
     clock_t begin, end;
     begin = clock();
     length = bruteForce(1, graph, graphSize, way);
@@ -57,6 +56,12 @@ int main() {
     wayPrint(way, graphSize + 1);
     wprintf(L"\n Its length = %d", length);
     wprintf(L"\n Elapsed %f", (double) (end - begin) / CLOCKS_PER_SEC);
+
+    free(way);
+    for (int i = 0; i < graphSize; i++) {
+        free(graph[i]);
+    }
+    free(graph);
     return 0;
 }
 
@@ -113,7 +118,8 @@ int bruteForce(int vertex, int **graph, int size, int *way) {
             stackOfStackPush(memory, calloc(1, sizeof(IntStack)));
             depth++;
         } else {
-            if (depth == size && graph[intStackTop(actualWay)][vertex] != 0 && wayLength+graph[intStackTop(actualWay)][vertex] < bestLength) {
+            if (depth == size && graph[intStackTop(actualWay)][vertex] != 0 &&
+                wayLength + graph[intStackTop(actualWay)][vertex] < bestLength) {
                 wayCopy(actualWay, way);
                 bestLength = wayLength + graph[intStackTop(actualWay)][vertex];
             }
@@ -123,6 +129,11 @@ int bruteForce(int vertex, int **graph, int size, int *way) {
         }
     }
     way[size] = vertex;
+    intStackFree(actualWay);
+    stackOfStackFree(memory);
+    if (bestLength == INT_MAX) {
+        return -1;
+    }
     return bestLength;
 }
 
@@ -144,7 +155,8 @@ int branchAndBound(int vertex, int **graph, int size, int *way) {
             stackOfStackPush(memory, calloc(1, sizeof(IntStack)));
             depth++;
         } else {
-            if (depth == size && graph[intStackTop(actualWay)][vertex] != 0 && wayLength+graph[intStackTop(actualWay)][vertex] < bestLength) {
+            if (depth == size && graph[intStackTop(actualWay)][vertex] != 0 &&
+                wayLength + graph[intStackTop(actualWay)][vertex] < bestLength) {
                 wayCopy(actualWay, way);
                 bestLength = wayLength + graph[intStackTop(actualWay)][vertex];
             }
@@ -154,6 +166,11 @@ int branchAndBound(int vertex, int **graph, int size, int *way) {
         }
     }
     way[size] = vertex;
+    intStackFree(actualWay);
+    stackOfStackFree(memory);
+    if (bestLength == INT_MAX) {
+        return -1;
+    }
     return bestLength;
 }
 
@@ -213,12 +230,17 @@ int nearestNeighbourMethod(int vertex, int **graph, int size, int *way) {
             if (depth == size && graph[intStackTop(actualWay)][vertex] != 0) {
                 wayCopy(actualWay, way);
                 way[size] = vertex;
-                return wayLength + graph[intStackTop(actualWay)][vertex];
+                current = intStackTop(actualWay);
+                intStackFree(actualWay);
+                stackOfStackFree(memory);
+                return wayLength + graph[current][vertex];
             }
             wayLength -= graph[intStackPop(actualWay)][intStackTop(actualWay)];
             stackOfStackPop(memory);
             depth--;
         }
     }
+    intStackFree(actualWay);
+    stackOfStackFree(memory);
     return -1;
 }
