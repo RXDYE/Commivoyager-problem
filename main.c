@@ -1,32 +1,62 @@
 #include <stdio.h>
 #include <wchar.h>
 #include <stdlib.h>
+#include <limits.h>
+#include <locale.h>
+#include <time.h>
 
-#include "stack.h"
+#include "StackOfStack.h"
+#include "IntStack.h"
 
 #define FILENAME "graph.txt"
 
-enum nodeState {
-    raw, processed;
-};
-
 int **readFromFile(char *filename, int *size);
 
-int **graphCopy(int **graph, int size);
+int bruteForce(int vertex, int **graph, int size, int *way);
 
-//TODO
-int *rough(int vertex, int **graph, int size, int *way);
+int branchAndBound(int vertex, int **graph, int size, int *way);
 
-int getUnvisitedNeighbour(int vertex, int **graph, int size, enum nodeState *states);
+int getUnvisitedNeighbour(int vertex, int **graph, int size, IntStack *currentWay, IntStack *visitedNeighbours);
 
-int isTraversed(enum nodeState *states, int size);
+int getNearestUnvisitedNeighbour(int vertex, int **graph, int size, IntStack *currentWay, IntStack *visitedNeighbours);
 
-//TODO
-int *nearestNeighbour(int vertex, int **graph, int size, int *way);
+int *wayCopy(IntStack *way, int *dest);
+
+void wayPrint(int *way, int size);
+
+int nearestNeighbourMethod(int vertex, int **graph, int size, int *way);
 
 int main() {
+    setlocale(LC_ALL, "");
     int graphSize;
     int **graph = readFromFile(FILENAME, &graphSize);
+    int *way = malloc(sizeof(int) * (graphSize + 1));
+    int length;
+
+    clock_t begin, end;
+    begin = clock();
+    length = bruteForce(1, graph, graphSize, way);
+    end = clock();
+    wprintf(L"Brute force found a way: ");
+    wayPrint(way, graphSize + 1);
+    wprintf(L"\n Its length = %d", length);
+    wprintf(L"\n Elapsed %f", (double) (end - begin) / CLOCKS_PER_SEC);
+
+    begin = clock();
+    length = branchAndBound(1, graph, graphSize, way);
+    end = clock();
+    wprintf(L"\nBranch and bound method found a way: ");
+    wayPrint(way, graphSize + 1);
+    wprintf(L"\n Its length = %d", length);
+    wprintf(L"\n Elapsed %f", (double) (end - begin) / CLOCKS_PER_SEC);
+
+    begin = clock();
+    length = nearestNeighbourMethod(1, graph, graphSize, way);
+    end = clock();
+    wprintf(L"\nNearest neighbour method found a way: ");
+    wayPrint(way, graphSize + 1);
+    wprintf(L"\n Its length = %d", length);
+    wprintf(L"\n Elapsed %f", (double) (end - begin) / CLOCKS_PER_SEC);
     return 0;
 }
 
@@ -65,44 +95,130 @@ int **graphCopy(int **graph, int size) {
     return copy;
 }
 
-int *rough(int vertex, int **graph, int size, int *way) {
-    enum nodeState *states = calloc(size, sizeof(enum nodeState));
-    Node *visited = NULL;
-    stackPush(visited, vertex);
+int bruteForce(int vertex, int **graph, int size, int *way) {
+    IntStack *actualWay = calloc(1, sizeof(IntStack));
+    intStackPush(actualWay, vertex);
+    StackOfStack *memory = calloc(1, sizeof(StackOfStack));
+    stackOfStackPush(memory, calloc(1, sizeof(IntStack)));
+    int current = vertex;
+    int bestLength = INT_MAX;
     int wayLength = 0;
-    int visitedAmount = 0;
-    int current;
-    //TODO
-    //maybe 3 states needed
-    while (!isTraversed(states, size)) {
-        current = stackTop(visited);
-        stackPush(visited, getUnvisitedNeighbour(current, graph, size, states));
-        states[stackTop(visited)] = processed;
-        wayLength += graph[current][stackTop(visited)];
-        visitedAmount++;
+    int depth = 1;
+    while (actualWay->head != NULL) {
+        if ((current = getUnvisitedNeighbour(intStackTop(actualWay), graph, size, actualWay,
+                                             stackOfStackTop(memory))) != -1) {
+            wayLength += graph[intStackTop(actualWay)][current];
+            intStackPush(actualWay, current);
+            intStackPush(stackOfStackTop(memory), current);
+            stackOfStackPush(memory, calloc(1, sizeof(IntStack)));
+            depth++;
+        } else {
+            if (depth == size && graph[intStackTop(actualWay)][vertex] != 0 && wayLength < bestLength) {
+                wayCopy(actualWay, way);
+                bestLength = wayLength + graph[intStackTop(actualWay)][vertex];
+            }
+            wayLength -= graph[intStackPop(actualWay)][intStackTop(actualWay)];
+            stackOfStackPop(memory);
+            depth--;
+        }
+    }
+    way[size] = vertex;
+    return bestLength;
+}
+
+int branchAndBound(int vertex, int **graph, int size, int *way) {
+    IntStack *actualWay = calloc(1, sizeof(IntStack));
+    intStackPush(actualWay, vertex);
+    StackOfStack *memory = calloc(1, sizeof(StackOfStack));
+    stackOfStackPush(memory, calloc(1, sizeof(IntStack)));
+    int current = vertex;
+    int bestLength = INT_MAX;
+    int wayLength = 0;
+    int depth = 1;
+    while (actualWay->head != NULL) {
+        if ((current = getUnvisitedNeighbour(intStackTop(actualWay), graph, size, actualWay,
+                                             stackOfStackTop(memory))) != -1 && wayLength < bestLength) {
+            wayLength += graph[intStackTop(actualWay)][current];
+            intStackPush(actualWay, current);
+            intStackPush(stackOfStackTop(memory), current);
+            stackOfStackPush(memory, calloc(1, sizeof(IntStack)));
+            depth++;
+        } else {
+            if (depth == size && graph[intStackTop(actualWay)][vertex] != 0 && wayLength < bestLength) {
+                wayCopy(actualWay, way);
+                bestLength = wayLength + graph[intStackTop(actualWay)][vertex];
+            }
+            wayLength -= graph[intStackPop(actualWay)][intStackTop(actualWay)];
+            stackOfStackPop(memory);
+            depth--;
+        }
+    }
+    way[size] = vertex;
+    return bestLength;
+}
+
+int *wayCopy(IntStack *way, int *dest) {
+    IntStackNode *current = way->head;
+    for (int i = 0; current != NULL; current = current->next, i++) {
+        dest[i] = current->data;
+    }
+    return dest;
+}
+
+void wayPrint(int *way, int size) {
+    for (int i = 0; i < size; i++) {
+        wprintf(L"%d ", way[i]);
     }
 }
 
-int getUnvisitedNeighbour(int vertex, int **graph, int size, enum nodeState *states) {
+int getUnvisitedNeighbour(int vertex, int **graph, int size, IntStack *currentWay, IntStack *visitedNeighbours) {
     for (int i = 0; i < size; i++) {
-        if (graph[vertex][i] != 0 && states[i] == raw) {
+        if (graph[vertex][i] != 0 && !isInIntStack(currentWay, i) && !isInIntStack(visitedNeighbours, i)) {
             return i;
         }
     }
     return -1;
 }
 
-int isTraversed(enum nodeState *states, int size) {
+int getNearestUnvisitedNeighbour(int vertex, int **graph, int size, IntStack *currentWay, IntStack *visitedNeighbours) {
+    int longest = INT_MAX;
+    int neighbour = -1;
     for (int i = 0; i < size; i++) {
-        if (states[i] == raw) {
-            return 0;
+        if (graph[vertex][i] != 0 && !isInIntStack(currentWay, i) && !isInIntStack(visitedNeighbours, i) &&
+            graph[vertex][i] < longest) {
+            longest = graph[vertex][i];
+            neighbour = i;
         }
     }
-    return 1;
+    return neighbour;
 }
 
-//TODO
-//int *nearestNeighbour(int vertex, int **graph, int size, int *way) {
-//    nodeState *states = calloc(size, sizeof(enum nodeState));
-//
-//}
+int nearestNeighbourMethod(int vertex, int **graph, int size, int *way) {
+    IntStack *actualWay = calloc(1, sizeof(IntStack));
+    intStackPush(actualWay, vertex);
+    StackOfStack *memory = calloc(1, sizeof(StackOfStack));
+    stackOfStackPush(memory, calloc(1, sizeof(IntStack)));
+    int current = vertex;
+    int wayLength = 0;
+    int depth = 1;
+    while (actualWay->head != NULL) {
+        if ((current = getNearestUnvisitedNeighbour(intStackTop(actualWay), graph, size, actualWay,
+                                                    stackOfStackTop(memory))) != -1) {
+            wayLength += graph[intStackTop(actualWay)][current];
+            intStackPush(actualWay, current);
+            intStackPush(stackOfStackTop(memory), current);
+            stackOfStackPush(memory, calloc(1, sizeof(IntStack)));
+            depth++;
+        } else {
+            if (depth == size && graph[intStackTop(actualWay)][vertex] != 0) {
+                wayCopy(actualWay, way);
+                way[size] = vertex;
+                return wayLength + graph[intStackTop(actualWay)][vertex];
+            }
+            wayLength -= graph[intStackPop(actualWay)][intStackTop(actualWay)];
+            stackOfStackPop(memory);
+            depth--;
+        }
+    }
+    return -1;
+}
