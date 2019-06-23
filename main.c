@@ -1,5 +1,5 @@
 #include <stdio.h>
-#include <wchar.h>
+#include <string.h>
 #include <stdlib.h>
 #include <limits.h>
 #include <locale.h>
@@ -31,19 +31,30 @@ int isOriented(int **graph, int size);
 void graphDelete(int **graph, int size);
 
 int main() {
-    setlocale(LC_ALL, "");
     int graphSize;
     int length;
+    int mode;
+    char filename[40];
     clock_t begin, end;
-    int **graph = readFromFile(FILENAME, &graphSize);
+
+    printf("Read from default file? 1 - yes, other input - to enter your filename\n");
+    scanf("%d", &mode);
+    if (mode != 1) {
+        printf("Please, enter the name of the file\n");
+        scanf("%s", filename);
+    } else {
+        strcpy(filename, FILENAME);
+    }
+    int **graph = readFromFile(filename, &graphSize);
     int *way = malloc(sizeof(int) * (graphSize + 1));
 
+    
     if (graph == NULL) {
-        wprintf(L"Error while reading a file. File was not found or there is incorrect data");
+        printf("Error while reading a file. File was not found or there is incorrect data");
         return 0;
     }
     if (isOriented(graph, graphSize)) {
-        wprintf(L"This graph is oriented");
+        printf("This graph is oriented");
         return 0;
     }
 
@@ -52,31 +63,31 @@ int main() {
     length = bruteForce(1, graph, graphSize, way);
     end = clock();
     if (length == -1) {
-        wprintf(L"This graph has no hamilton cycle. Commivoyager problem can't be solved\n");
+        printf("This graph has no hamilton cycle. Commivoyager problem can't be solved\n");
         return 0;
     }
-    wprintf(L"Brute force found a way: ");
+    printf("Brute force found a way: ");
     wayPrint(way, graphSize + 1);
-    wprintf(L"\n Its length = %d\n", length);
-    wprintf(L" Elapsed %f\n", (double) (end - begin) / CLOCKS_PER_SEC);
+    printf("\n Its length = %d\n", length);
+    printf(" Elapsed %f\n", (double) (end - begin) / CLOCKS_PER_SEC);
 
 
     begin = clock();
     length = branchAndBound(1, graph, graphSize, way);
     end = clock();
-    wprintf(L"Branch and bound method found a way: ");
+    printf("Branch and bound method found a way: ");
     wayPrint(way, graphSize + 1);
-    wprintf(L"\n Its length = %d\n", length);
-    wprintf(L" Elapsed %f\n", (double) (end - begin) / CLOCKS_PER_SEC);
+    printf("\n Its length = %d\n", length);
+    printf(" Elapsed %f\n", (double) (end - begin) / CLOCKS_PER_SEC);
 
 
     begin = clock();
     length = nearestNeighbourMethod(1, graph, graphSize, way);
     end = clock();
-    wprintf(L"Nearest neighbour method found a way: ");
+    printf("Nearest neighbour method found a way: ");
     wayPrint(way, graphSize + 1);
-    wprintf(L"\n Its length = %d\n", length);
-    wprintf(L" Elapsed %f", (double) (end - begin) / CLOCKS_PER_SEC);
+    printf("\n Its length = %d\n", length);
+    printf(" Elapsed %f", (double) (end - begin) / CLOCKS_PER_SEC);
 
 
     free(way);
@@ -89,9 +100,9 @@ int **readFromFile(char *filename, int *size) {
     *size = 0;
     int temp;
     while (1) {
-        fwscanf(file, L"%d", &temp);
+        fscanf(file, "%d", &temp);
         (*size)++;
-        if (fgetwc(file) == L'\n') {
+        if (fgetc(file) == L'\n') {
             break;
         }
     }
@@ -109,7 +120,7 @@ int **readFromFile(char *filename, int *size) {
                 free(graph);
                 return NULL;
             }
-            fwscanf(file, L"%d", &graph[i][j]);
+            fscanf(file, "%d", &graph[i][j]);
         }
     }
     return graph;
@@ -199,7 +210,7 @@ int *wayCopy(IntStack *way, int *dest) {
 
 void wayPrint(int *way, int size) {
     for (int i = 0; i < size; i++) {
-        wprintf(L"%d ", way[i]);
+        printf("%d ", way[i]);
     }
 }
 
