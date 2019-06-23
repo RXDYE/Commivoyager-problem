@@ -48,7 +48,7 @@ int main() {
     int **graph = readFromFile(filename, &graphSize);
     int *way = malloc(sizeof(int) * (graphSize + 1));
 
-    
+
     if (graph == NULL) {
         printf("Error while reading a file. File was not found or there is incorrect data");
         return 0;
@@ -97,6 +97,9 @@ int main() {
 
 int **readFromFile(char *filename, int *size) {
     FILE *file = fopen(filename, "r");
+    if (file == NULL) {
+        return NULL;
+    }
     *size = 0;
     int temp;
     while (1) {
