@@ -26,6 +26,8 @@ void wayPrint(int *way, int size);
 
 int nearestNeighbourMethod(int vertex, int **graph, int size, int *way);
 
+int isOriented(int **graph, int size);
+
 int main() {
     setlocale(LC_ALL, "");
     int graphSize;
@@ -33,29 +35,38 @@ int main() {
     int *way = malloc(sizeof(int) * (graphSize + 1));
     int length;
     clock_t begin, end;
+
+    if (isOriented(graph, graphSize)) {
+        wprintf(L"This graph is oriented");
+        return 0;
+    }
     begin = clock();
     length = bruteForce(1, graph, graphSize, way);
     end = clock();
+    if (length == -1) {
+        wprintf(L"This graph has no hamilton cycle. Commivoyager problem can't be solved\n");
+        return 0;
+    }
     wprintf(L"Brute force found a way: ");
     wayPrint(way, graphSize + 1);
-    wprintf(L"\n Its length = %d", length);
-    wprintf(L"\n Elapsed %f", (double) (end - begin) / CLOCKS_PER_SEC);
+    wprintf(L"\n Its length = %d\n", length);
+    wprintf(L" Elapsed %f\n", (double) (end - begin) / CLOCKS_PER_SEC);
 
     begin = clock();
     length = branchAndBound(1, graph, graphSize, way);
     end = clock();
-    wprintf(L"\nBranch and bound method found a way: ");
+    wprintf(L"Branch and bound method found a way: ");
     wayPrint(way, graphSize + 1);
-    wprintf(L"\n Its length = %d", length);
-    wprintf(L"\n Elapsed %f", (double) (end - begin) / CLOCKS_PER_SEC);
+    wprintf(L"\n Its length = %d\n", length);
+    wprintf(L" Elapsed %f\n", (double) (end - begin) / CLOCKS_PER_SEC);
 
     begin = clock();
     length = nearestNeighbourMethod(1, graph, graphSize, way);
     end = clock();
-    wprintf(L"\nNearest neighbour method found a way: ");
+    wprintf(L"Nearest neighbour method found a way: ");
     wayPrint(way, graphSize + 1);
-    wprintf(L"\n Its length = %d", length);
-    wprintf(L"\n Elapsed %f", (double) (end - begin) / CLOCKS_PER_SEC);
+    wprintf(L"\n Its length = %d\n", length);
+    wprintf(L" Elapsed %f", (double) (end - begin) / CLOCKS_PER_SEC);
 
     free(way);
     for (int i = 0; i < graphSize; i++) {
@@ -243,4 +254,15 @@ int nearestNeighbourMethod(int vertex, int **graph, int size, int *way) {
     intStackFree(actualWay);
     stackOfStackFree(memory);
     return -1;
+}
+
+int isOriented(int **graph, int size) {
+    for (int i = 0; i < size; i++) {
+        for (int j = 0; j < size; j++) {
+            if (graph[i][j] != graph[j][i]) {
+                return 1;
+            }
+        }
+    }
+    return 0;
 }
