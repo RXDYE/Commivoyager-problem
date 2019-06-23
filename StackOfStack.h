@@ -35,6 +35,7 @@ void stackOfStackPop(StackOfStack *stackOfStack) {
     if (stackOfStack->head == NULL) {
         return;
     } else if (stackOfStack->head->next == NULL) {
+        intStackFree(stackOfStack->head->data);
         free(stackOfStack->head);
         stackOfStack->head = stackOfStack->tail = NULL;
     } else {
@@ -42,6 +43,7 @@ void stackOfStackPop(StackOfStack *stackOfStack) {
         while (current->next != stackOfStack->tail) {
             current = current->next;
         }
+        intStackFree(stackOfStack->tail->data);
         free(stackOfStack->tail);
         stackOfStack->tail = current;
         stackOfStack->tail->next = NULL;

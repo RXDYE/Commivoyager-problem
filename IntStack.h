@@ -70,4 +70,19 @@ int isInIntStack(IntStack *intStack, int data) {
     return 0;
 }
 
+void intStackFree(IntStack *intStack) {
+    if (intStack == NULL) {
+        return;
+    }
+    IntStackNode *temp;
+    IntStackNode *current;
+    current = intStack->head;
+    while (current != NULL) {
+        temp = current;
+        current = current->next;
+        free(temp);
+    }
+    free(intStack);
+}
+
 #endif //HALF_YEAR_WORK_INTSTACK_H
