@@ -2,7 +2,6 @@
 #include <string.h>
 #include <stdlib.h>
 #include <limits.h>
-#include <locale.h>
 #include <time.h>
 
 #include "StackOfStack.h"
@@ -53,6 +52,11 @@ int main() {
         printf("Error while reading a file. File was not found or there is incorrect data");
         return 0;
     }
+
+    if (graphSize < 3) {
+        printf("Graph should have more than 2 vertices");
+    }
+
     if (isOriented(graph, graphSize)) {
         printf("This graph is oriented");
         return 0;
