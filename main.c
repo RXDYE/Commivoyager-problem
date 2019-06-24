@@ -11,20 +11,26 @@
 
 int **readFromFile(char *filename, int *size);
 
+///returns length, -1 if there is no way
 int bruteForce(int vertex, int **graph, int size, int *way);
 
+///returns length, -1 if there is no way
 int branchAndBound(int vertex, int **graph, int size, int *way);
 
+///returns -1 if there is no unvisited neighbour
 int getUnvisitedNeighbour(int vertex, int **graph, int size, IntStack *currentWay, IntStack *visitedNeighbours);
 
+///return -1 if there is no unvisited neighbour
 int getNearestUnvisitedNeighbour(int vertex, int **graph, int size, IntStack *currentWay, IntStack *visitedNeighbours);
 
 int *wayCopy(IntStack *way, int *dest);
 
 void wayPrint(int *way, int size);
 
+///returns length, -1 if there is no way
 int nearestNeighbourMethod(int vertex, int **graph, int size, int *way);
 
+///1 - directed, 0 - undirected
 int isOriented(int **graph, int size);
 
 void graphDelete(int **graph, int size);
@@ -35,6 +41,7 @@ int main() {
     int mode;
     char filename[40];
     clock_t begin, end;
+    int start;
 
     printf("Read from default file? 1 - yes, other input - to enter your filename\n");
     scanf("%d", &mode);
@@ -58,13 +65,16 @@ int main() {
     }
 
     if (isOriented(graph, graphSize)) {
-        printf("This graph is oriented");
+        printf("This graph is directed");
         return 0;
     }
 
-
+    printf("Enter a vertex to start\n");
+    do {
+        scanf("%d", &start);
+    } while (start >= graphSize || start < 0);
     begin = clock();
-    length = bruteForce(1, graph, graphSize, way);
+    length = bruteForce(start, graph, graphSize, way);
     end = clock();
     if (length == -1) {
         printf("This graph has no hamilton cycle. Commivoyager problem can't be solved\n");
@@ -77,7 +87,7 @@ int main() {
 
 
     begin = clock();
-    length = branchAndBound(1, graph, graphSize, way);
+    length = branchAndBound(start, graph, graphSize, way);
     end = clock();
     printf("Branch and bound method found a way: ");
     wayPrint(way, graphSize + 1);
@@ -86,7 +96,7 @@ int main() {
 
 
     begin = clock();
-    length = nearestNeighbourMethod(1, graph, graphSize, way);
+    length = nearestNeighbourMethod(start, graph, graphSize, way);
     end = clock();
     printf("Nearest neighbour method found a way: ");
     wayPrint(way, graphSize + 1);
@@ -188,11 +198,13 @@ int branchAndBound(int vertex, int **graph, int size, int *way) {
             stackOfStackPush(memory, calloc(1, sizeof(IntStack)));
             depth++;
         } else {
+            ///If all vertices was passed - consider as possible good
             if (depth == size && graph[intStackTop(actualWay)][vertex] != 0 &&
                 wayLength + graph[intStackTop(actualWay)][vertex] < bestLength) {
                 wayCopy(actualWay, way);
                 bestLength = wayLength + graph[intStackTop(actualWay)][vertex];
             }
+            ///step back
             wayLength -= graph[intStackPop(actualWay)][intStackTop(actualWay)];
             stackOfStackPop(memory);
             depth--;
